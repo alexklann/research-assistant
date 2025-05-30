@@ -23,3 +23,9 @@ After that, you can start up the server:
 ```
 fastapi dev src/main.py
 ```
+
+## Environment Variables
+The backend requires a .env file in the root of the repository with the following fields:  
+```
+CORE_API_KEY = "" # API key for the CORE Research Paper API
+```
