@@ -1,7 +1,6 @@
-import { FilledButton } from '@/components/FilledButton';
-import { StyleSheet, View, Text, TextInput, TouchableWithoutFeedback, Keyboard, Pressable, Image } from 'react-native';
+import { StyleSheet, View, Text, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
 
-export default function HomeScreen() {
+export default function ChatScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.appTitle}>pAIper</Text>
@@ -11,7 +10,6 @@ export default function HomeScreen() {
             <Text style={{ color: '#fff', marginTop: 20 }}>
               Continue where you left off...
             </Text>
-            <FilledButton text="Show more" imageSource='asd'/>
           </View>
       </TouchableWithoutFeedback>
     </View>
