@@ -40,3 +40,6 @@ app-example
 
 .vscode/
 .DS_Store
+
+android
+ios

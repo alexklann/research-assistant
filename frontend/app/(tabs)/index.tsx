@@ -1,11 +1,10 @@
 import { FilledButton } from '@/components/FilledButton';
-import { StyleSheet, View, Text, TextInput, TouchableWithoutFeedback, Keyboard, Pressable, Image } from 'react-native';
+import { StyleSheet, View, Text, TouchableWithoutFeedback, Keyboard } from 'react-native';
 
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.appTitle}>pAIper</Text>
-      <TextInput style={styles.searchBar} placeholder='Search for paper'/>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={{flex: 1}}>
             <Text style={{ color: '#fff', marginTop: 20 }}>
