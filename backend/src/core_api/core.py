@@ -20,7 +20,7 @@ class CoreAPI:
         offset = page * PAGE_LENGTH - PAGE_LENGTH
 
         response = requests.get(
-            f"{self.base_url}/search/works/?q={query}&limit={limit}&offset={offset}",
+            f"{self.base_url}/search/works/?q={query}",
             headers={"Authorization": f"Bearer {self.api_key}"}   
         )
         if response.status_code != 200:
