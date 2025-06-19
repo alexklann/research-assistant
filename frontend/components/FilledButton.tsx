@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     button: {
         flex: 1,
         flexDirection: 'row',
-        backgroundColor: '#fff',
+        backgroundColor: '#60AFFF',
         gap: 8,
         width: '100%',
         maxHeight: 64,

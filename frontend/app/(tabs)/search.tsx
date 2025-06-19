@@ -1,29 +1,33 @@
 import { StyleSheet, View, Text, TextInput, TouchableWithoutFeedback, Keyboard, Pressable, ScrollView } from 'react-native';
 import { useDebouncedCallback } from 'use-debounce';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import storage from '@/utils/paperStorage';
+import { PaperPage } from '@/components/PaperPage';
 
 type SearchResult = {
   title: string;
   authors: any[];
 };
 
+interface ResearchPaper {
+    title: string;
+    authors: { name: string }[];
+    abstract: string;
+    fullText: string;
+    publishedDate: string;
+    id: number;
+}
+
 export default function SearchScreen() {
   const [searchData, setSearchData] = useState<SearchResult[]>([]);
   const [currentPage, setCurrentPage] = useState<'search' | 'detail'>('search');
   const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'error' | 'notfound'>('idle');
-  const [aiStatus, setAIStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [crewResponses, setCrewResponses] = useState({
-    'summarizer': '',
-    'citator': '',
-  });
 
-  interface Author {
-    name: string;
-  }
+  
 
-  const [paperContents, setPaperContents] = useState({
+  const [paperContents, setPaperContents] = useState<ResearchPaper>({
     title: '',
-    authors: [] as Author[],
+    authors: [],
     abstract: '',
     fullText: '',
     publishedDate: '',
@@ -39,7 +43,8 @@ export default function SearchScreen() {
       }
       setSearchStatus('loading');
       setSearchData([]);
-      await fetch(`http://192.168.1.28:8000/v1/search?query=${value}`)
+      const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
+      await fetch(`${apiBaseURL}/v1/search?query=${value}`)
         .then(response => response.json())
         .then(data => {
           if (data.results.length === 0) {
@@ -50,17 +55,10 @@ export default function SearchScreen() {
         })
         .catch(error => {
           setSearchStatus('error')
-          console.error(error);
         });
     },
     500
   )
-
-  useEffect(() => {
-    if (paperContents.title !== '') {
-      
-    }
-  }, [paperContents])
 
   const setPaper = (paper: any) => {
     let tempPaperContents = {
@@ -71,42 +69,30 @@ export default function SearchScreen() {
       publishedDate: paper.publishedDate,
       id: paper.id,
     }
-    const fetchAIResponses = async () => {
-      let requestBody = JSON.stringify({
-          "paper_content": tempPaperContents.abstract,
-          "authors": tempPaperContents.authors.map(author => author.name).toString(),
-          "title": tempPaperContents.title,
-          "year": new Date(tempPaperContents.publishedDate).getFullYear().toString(),
-        });
-      console.log(requestBody)
-      await fetch(`http://192.168.1.28:8000/v1/crew/run`, {
-        method: 'POST',
-        body: JSON.stringify({
-          "paper_content": tempPaperContents.abstract,
-          "authors": tempPaperContents.authors.map(author => author.name).toString(),
-          "title": tempPaperContents.title,
-          "journal": "",
-          "year": new Date(tempPaperContents.publishedDate).getFullYear().toString(),
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data);
-        setCrewResponses({
-          'summarizer': data.summarizer_output,
-          'citator': data.citator_output,
-        });
-        setAIStatus('idle');
-      })
-      .catch(error => {
-        console.error('Error fetching AI responses:', error);
-        setAIStatus('error');
-      });
-    }
+
     setPaperContents(tempPaperContents);
-    setAIStatus('loading');
+
+    let saveData = {
+      title: paper.title,
+      id: paper.id,
+    }
+
+    storage.load({
+      key: 'papers',
+      autoSync: true,
+      syncInBackground: true,
+    }).then(ret => {
+      const existingPapers = ret || [];
+      const paperExists = existingPapers.some((p: any) => p.id === saveData.id);
+      if (!paperExists) {
+        existingPapers.push(saveData);
+        storage.save({
+          key: 'papers',
+          data: existingPapers
+        })
+      }
+    })
     setCurrentPage('detail');
-    fetchAIResponses();
   }
 
   if (currentPage === 'search') {
@@ -116,6 +102,7 @@ export default function SearchScreen() {
         <TextInput
           style={styles.searchBar}
           placeholder='Search for paper'
+          placeholderTextColor="#aaa"
           onChangeText={(text) => debounced(text)}/>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView style={{ flex: 1, marginTop: 8 }}>
@@ -145,39 +132,12 @@ export default function SearchScreen() {
     );
   } else {
     return (
-      <View style={styles.container}>
-        <Text style={styles.appTitle}>pAIper</Text>
-        <Pressable onPress={() => {setCurrentPage('search')}}>
-          <Text style={styles.backButton}>Back</Text>
-        </Pressable>
-        <View style={{flex: 1}}>
-          {paperContents.title !== "" ? (
-            <ScrollView style={{ flex: 1 }}>
-              <Text style={styles.paperTitle}>{paperContents.title}</Text>
-              <Text style={{ color: '#fff' }}>{new Date(paperContents.publishedDate).toLocaleDateString('de')}</Text>
-              <Text style={styles.paperAuthors}>{paperContents.authors.length > 1 ? paperContents.authors.map(author => author.name).join(', ') : paperContents.authors[0].name}</Text>
-              {aiStatus === 'loading' ? (
-                <View style={styles.aiContainer}>
-                  <Text style={styles.aiCitator}>AI is thinking...</Text>
-                </View>
-              ): aiStatus === 'error' ? (
-                <Text style={{ color: '#fff' }}>There was an error generating ai responses</Text>
-              ): (
-                <View style={styles.aiContainer}>
-                  <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
-                  <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
-                </View>
-              )}
-              <Text style={{ color: '#fff' }}>{paperContents.fullText}</Text>
-            </ScrollView>
-          ): (
-            <Text>An error occured during the loading of this paper.</Text>
-          )}
-        </View>
-      </View>
+      <PaperPage
+        paperContents={paperContents}
+        setCurrentPage={setCurrentPage}
+      />
     );
   }
-  
 }
 
 const styles = StyleSheet.create({
@@ -185,7 +145,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: 72,
-    paddingHorizontal: 32
+    paddingHorizontal: 32,
+    backgroundColor: '#121212',
   },
   appTitle: {
     color: '#fff',
@@ -196,7 +157,7 @@ const styles = StyleSheet.create({
   searchBar: {
     color: '#fff',
     height: 48,
-    borderColor: '#fff',
+    borderColor: '#cfcfcf',
     borderWidth: 1,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -228,20 +189,19 @@ const styles = StyleSheet.create({
   aiContainer: {
     borderWidth: 1,
     borderRadius: 8,
-    borderColor: '#fff',
+    borderColor: '#91c5fa',
     padding: 16,
     marginVertical: 16,
-    backgroundColor: '#222',
+    backgroundColor: '#60AFFF',
+    gap: 16,
   },
   aiSummarizer: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
-    marginBottom: 8,
   },
   aiCitator: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
-    marginBottom: 8,
     fontWeight: 'bold'
   }
-});
+})
