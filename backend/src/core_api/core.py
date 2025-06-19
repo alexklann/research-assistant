@@ -26,3 +26,17 @@ class CoreAPI:
         if response.status_code != 200:
             raise Exception(f"Error: {response.status_code} - {response.text}")
         return response.json()
+    
+    def get_paper(self, paper_id: str):
+        """
+        Retrieve a paper by its ID.
+        :param paper_id: The ID of the paper to retrieve.
+        :return: Paper details.
+        """
+        response = requests.get(
+            f"{self.base_url}/works/{paper_id}",
+            headers={"Authorization": f"Bearer {self.api_key}"}
+        )
+        if response.status_code != 200:
+            raise Exception(f"Error: {response.status_code} - {response.text}")
+        return response.json()

@@ -34,7 +34,18 @@ async def search(query: str, page: int = 1):
     except Exception as e:
         return { "error": str(e) }
 
-
+@app.get("/v1/paper/{paper_id}")
+async def get_paper(paper_id: str):
+    """
+    Retrieve a paper by its ID.
+    :param paper_id: The ID of the paper to retrieve.
+    :return: Paper details.
+    """
+    try:
+        paper = core_api.get_paper(paper_id)
+        return paper
+    except Exception as e:
+        return { "error": str(e) }
 
 @app.post("/v1/crew/run")
 async def run_crew(input_data: Request):
