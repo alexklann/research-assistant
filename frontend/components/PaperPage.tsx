@@ -1,14 +1,7 @@
 import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
-
-interface ResearchPaper {
-    title: string;
-    authors: { name: string }[];
-    abstract: string;
-    fullText: string;
-    publishedDate: string;
-    id: number;
-}
+import PdfViewer from "./PdfViewer";
+import { ResearchPaper } from "@/types/ResearchPaper";
 
 export function PaperPage({ paperContents, setCurrentPage }: { paperContents: ResearchPaper, setCurrentPage: (page: 'search' | 'detail') => void }) {
   const [aiStatus, setAIStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -76,7 +69,9 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
                     </View>
                 </View>
                 )}
-                <Text style={{ color: '#fff' }}>{paperContents.fullText}</Text>
+                <PdfViewer
+                  source={{ uri: paperContents.downloadUrl }}
+                  style={{ flex: 1, backgroundColor: '#00000000', width: '100%', height: 450, marginBottom: 128 }}/>
             </ScrollView>
             ): (
             <Text>An error occured during the loading of this paper.</Text>

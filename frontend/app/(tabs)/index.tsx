@@ -3,15 +3,7 @@ import { StyleSheet, View, Text, TouchableWithoutFeedback, Keyboard, Pressable }
 import storage from '@/utils/paperStorage';
 import { useEffect, useState } from 'react';
 import { PaperPage } from '@/components/PaperPage';
-
-interface ResearchPaper {
-    title: string;
-    authors: { name: string }[];
-    abstract: string;
-    fullText: string;
-    publishedDate: string;
-    id: number;
-}
+import { ResearchPaper } from "@/types/ResearchPaper";
 
 export default function HomeScreen() {
   const [oldPapers, setOldPapers] = useState([]);
@@ -22,17 +14,16 @@ export default function HomeScreen() {
     authors: [],
     abstract: '',
     fullText: '',
+    downloadUrl: '',
     publishedDate: '',
     id: 0,
   });
 
   useEffect(() => {
-    console.log('HomeScreen mounted');
     storage.load({
       key: 'papers'
     }).then(papers => {
       setOldPapers(papers);
-      console.log('Loaded papers:', papers);
     }).catch(error => {
       console.error('Failed to load papers:', error);
     });
@@ -40,17 +31,16 @@ export default function HomeScreen() {
 
   async function handlePaperPress(paperId: number) {
     setLoading(true);
-    console.log(`Paper with ID ${paperId} pressed`);
     const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
       await fetch(`${apiBaseURL}/v1/paper/${paperId}`)
       .then(response => response.json())
       .then(data => {
-        console.log('Paper data:', data);
         setSelectedPaper({
           title: data.title,
           authors: data.authors,
           abstract: data.abstract,
           fullText: data.fullText,
+          downloadUrl: data.downloadUrl,
           publishedDate: data.publishedDate,
           id: data.id
         });

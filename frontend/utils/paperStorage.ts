@@ -5,7 +5,7 @@ const storage = new Storage({
   size: 1000,
 
   // Use AsyncStorage for RN apps, or window.localStorage for web apps.
-  storageBackend: AsyncStorage,
+  storageBackend: window.localStorage || AsyncStorage,
 
   defaultExpires: null,
   enableCache: true,

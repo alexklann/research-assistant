@@ -3,33 +3,24 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useState } from 'react';
 import storage from '@/utils/paperStorage';
 import { PaperPage } from '@/components/PaperPage';
+import { ResearchPaper } from "@/types/ResearchPaper";
 
 type SearchResult = {
   title: string;
   authors: any[];
 };
 
-interface ResearchPaper {
-    title: string;
-    authors: { name: string }[];
-    abstract: string;
-    fullText: string;
-    publishedDate: string;
-    id: number;
-}
-
 export default function SearchScreen() {
   const [searchData, setSearchData] = useState<SearchResult[]>([]);
   const [currentPage, setCurrentPage] = useState<'search' | 'detail'>('search');
   const [searchStatus, setSearchStatus] = useState<'idle' | 'loading' | 'error' | 'notfound'>('idle');
-
-  
 
   const [paperContents, setPaperContents] = useState<ResearchPaper>({
     title: '',
     authors: [],
     abstract: '',
     fullText: '',
+    downloadUrl: '',
     publishedDate: '',
     id: 0,
   });
@@ -61,11 +52,12 @@ export default function SearchScreen() {
   )
 
   const setPaper = (paper: any) => {
-    let tempPaperContents = {
+    let tempPaperContents: ResearchPaper = {
       title: paper.title,
       authors: paper.authors,
       abstract: paper.abstract,
       fullText: paper.fullText,
+      downloadUrl: paper.downloadUrl,
       publishedDate: paper.publishedDate,
       id: paper.id,
     }

@@ -29,14 +29,14 @@ class ResearchHelperCrew():
         self.summarizer_task = Task(
             name="Summarize Research Paper",
             description="Summarize the provided research paper content: {paper_content}",
-            expected_output="Short summary of the research paper, highlighting key findings and contributions. Make it as short as possible while retaining the essence of the paper.",
+            expected_output="Short summary of the research paper with max. 100 words, highlighting key findings and contributions. Make it as short as possible while retaining the essence of the paper.",
             agent=self.summarizer_agent,
         )
 
         self.citator_task = Task(
             name="Create Research Paper Citations",
             description="Generate citations for the provided research paper: {authors}, {title}, {journal}, {year}",
-            expected_output="Accurate citations for the research paper, formatted correctly according to academic standards.",
+            expected_output="Accurate citations for the research paper, formatted correctly according to this schema: Nachname, Vorname der Autor:in (Jahr): Titel und Untertitel. ggf. Auflage. Verlag.",
             agent=self.citator_agent,
         )
 

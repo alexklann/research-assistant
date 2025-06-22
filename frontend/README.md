@@ -17,5 +17,5 @@ npx expo
 ## Environment Variables
 The frontend requires a .env file in the root of the frontend folder with the following fields:  
 ```
-EXPO_PUBLIC_BACKEND_UR = "" # The research assistant backend url
+EXPO_PUBLIC_BACKEND_URL = "" # The research assistant backend url
 ```
