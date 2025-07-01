@@ -1,17 +1,21 @@
+# backend/src/main.py
+
 from fastapi import FastAPI, Request
 from dotenv import load_dotenv
-from core_api import CoreAPI
+from core_api.core import CoreAPI
 from crew import ResearchHelperCrew
 from pydantic import BaseModel
 
 load_dotenv()
-    
+
 class TaskInputs(BaseModel):
+    query        : str
+    lang         : str
     paper_content: str
-    authors: str
-    title: str
-    journal: str = ""
-    year: str
+    authors      : str
+    title        : str
+    journal      : str = ""
+    year         : str
 
 app = FastAPI()
 core_api = CoreAPI()
@@ -29,8 +33,7 @@ async def search(query: str, page: int = 1):
     :return: Search results.
     """
     try:
-        results = core_api.search(query, page)
-        return results
+        return core_api.search(query, page)
     except Exception as e:
         return { "error": str(e) }
 
@@ -42,18 +45,18 @@ async def get_paper(paper_id: str):
     :return: Paper details.
     """
     try:
-        paper = core_api.get_paper(paper_id)
-        return paper
+        return core_api.get_paper(paper_id)
     except Exception as e:
         return { "error": str(e) }
 
 @app.post("/v1/crew/run")
-async def run_crew(input_data: Request):
-    request_data = await input_data.json()
-    print(request_data)
+async def run_crew(input_data: TaskInputs):
+    """
+    Run the full ResearchHelperCrew (Search → Summarizer → Citator).
+    """
     try:
         crew = ResearchHelperCrew()
-        outputs = crew.run_crew(request_data)
+        outputs = crew.run_crew(input_data.dict())
         return outputs
     except Exception as e:
         return { "error": str(e) }
