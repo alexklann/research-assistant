@@ -15,7 +15,7 @@ class ResearchHelperCrew():
             verbose=True,
             allow_delegation=False,
             llm=LLM(
-                model="ollama/gemini3:4b",
+                model="ollama/gemma3:4b",
                 base_url="http://localhost:11434",
             )
         )
@@ -41,7 +41,7 @@ class ResearchHelperCrew():
             verbose=True,
             allow_delegation=False,
             llm=LLM(
-                model="ollama/gemini3:4b",
+                model="ollama/gemma3:4b",
                 base_url="http://localhost:11434",
             )
         )
@@ -56,7 +56,7 @@ class ResearchHelperCrew():
             verbose=True,
             allow_delegation=False,
             llm=LLM(
-                model="ollama/gemini3:4b",
+                model="ollama/gemma3:4b",
                 base_url="http://localhost:11434",
             )
         )
