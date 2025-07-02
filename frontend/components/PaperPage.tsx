@@ -4,6 +4,7 @@ import PdfViewer from "./PdfViewer";
 import { ResearchPaper } from "@/types/ResearchPaper";
 
 export function PaperPage({ paperContents, setCurrentPage }: { paperContents: ResearchPaper, setCurrentPage: (page: 'search' | 'detail') => void }) {
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [aiStatus, setAIStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [crewResponses, setCrewResponses] = useState({
     'summarizer': '',
@@ -41,48 +42,84 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
 
   return (
     <View style={styles.container}>
-        <Text style={styles.appTitle}>pAIper</Text>
-        <Pressable onPress={() => {setCurrentPage('search')}}>
+      {isFullscreen ? (
+        <View style={styles.fullscreenContainer}>
+          <Pressable
+            onPress={() => setIsFullscreen(false)}
+            style={styles.fullscreenBackButton}
+          >
             <Text style={styles.backButton}>Back</Text>
-        </Pressable>
-        <View style={{flex: 1}}>
+          </Pressable>
+          <PdfViewer
+            source={{ uri: paperContents.downloadUrl }}
+            style={{ flex: 1 }}
+          />
+        </View>
+      ) : (
+        <>
+          <Text style={styles.appTitle}>pAIper</Text>
+          <Pressable onPress={() => {setCurrentPage('search')}}>
+            <Text style={styles.backButton}>Back</Text>
+          </Pressable>
+          <View style={{flex: 1}}>
             {paperContents.title !== "" ? (
-            <ScrollView style={{ flex: 1 }}>
+              <ScrollView style={{ flex: 1 }}>
                 <Text style={{ color: '#fff' }}>{new Date(paperContents.publishedDate).toLocaleDateString('de')}</Text>
                 <Text style={styles.paperTitle}>{paperContents.title}</Text>
                 <Text style={styles.paperAuthors}>{paperContents.authors.length > 1 ? paperContents.authors.map(author => author.name).join(', ') : paperContents.authors[0].name}</Text>
                 {aiStatus === 'loading' ? (
-                <View style={styles.aiContainer}>
+                  <View style={styles.aiContainer}>
                     <Text style={styles.aiCitator}>AI is thinking...</Text>
-                </View>
-                ): aiStatus === 'error' ? (
-                <Text style={{ color: '#fff' }}>There was an error generating ai responses</Text>
-                ): (
-                <View style={styles.aiContainer}>
+                  </View>
+                ) : aiStatus === 'error' ? (
+                  <Text style={{ color: '#fff' }}>There was an error generating ai responses</Text>
+                ) : (
+                  <View style={styles.aiContainer}>
                     <View>
-                    <Text>Summary:</Text>
-                    <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
+                      <Text>Summary:</Text>
+                      <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
                     </View>
                     <View>
-                    <Text>Example Citation:</Text>
-                    <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
+                      <Text>Example Citation:</Text>
+                      <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
                     </View>
-                </View>
+                  </View>
                 )}
                 <PdfViewer
                   source={{ uri: paperContents.downloadUrl }}
-                  style={{ flex: 1, backgroundColor: '#00000000', width: '100%', height: 450, marginBottom: 128 }}/>
-            </ScrollView>
-            ): (
-            <Text>An error occured during the loading of this paper.</Text>
+                  style={{ flex: 1, backgroundColor: '#00000000', width: '100%', height: 450, marginBottom: 128 }}
+                  webviewProps={{
+                    onTouchStart: () => setIsFullscreen(true)
+                  }}
+                />
+              </ScrollView>
+            ) : (
+              <Text>An error occured during the loading of this paper.</Text>
             )}
-        </View>
+          </View>
+        </>
+      )}
     </View>
   );
 }
 
 
 const styles = StyleSheet.create({
+  fullscreenContainer: {
+    flex: 1,
+    backgroundColor: '#121212',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  fullscreenBackButton: {
+    position: 'absolute',
+    top: 32,
+    left: 16,
+    zIndex: 1000,
+  },
   container: {
     flex: 1,
     justifyContent: 'flex-start',
