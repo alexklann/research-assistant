@@ -29,7 +29,7 @@ class ResearchHelperCrew():
         self.takeaway_agent = Agent(
             role="Senior Paper Takeaway Generator",
             goal="Summarize the key takeaways of a paper into concise bullet points.",
-            backstory="You are an expert at distilling central insights and actionable or learning points from lengthy texts.",
+            backstory="You are an expert at distilling central insights and actionable or learning points from lengthy texts. Do not use any markdown formatting in your output, except for bullet points as dashes.",
             verbose=True,
             allow_delegation=False,
             llm=LLM(
