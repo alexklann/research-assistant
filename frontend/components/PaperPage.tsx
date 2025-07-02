@@ -46,9 +46,9 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
         <View style={styles.fullscreenContainer}>
           <Pressable
             onPress={() => setIsFullscreen(false)}
-            style={styles.fullscreenBackButton}
+            style={[styles.fullscreenBackButton, styles.backButtonCircle]}
           >
-            <Text style={styles.backButton}>Back</Text>
+            <Text style={styles.backButtonIcon}>&#8592;</Text>
           </Pressable>
           <PdfViewer
             source={{ uri: paperContents.downloadUrl }}
@@ -57,14 +57,18 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
         </View>
       ) : (
         <>
-          <Text style={styles.appTitle}>pAIper</Text>
+          <View style={styles.appTitleContainer}>
+            <Text style={styles.appTitle}>pAIper</Text>
+          </View>
           <Pressable onPress={() => {setCurrentPage('search')}}>
-            <Text style={styles.backButton}>Back</Text>
+            <View style={styles.backButtonCircle}>
+              <Text style={styles.backButtonIcon}>&#8592;</Text>
+            </View>
           </Pressable>
           <View style={{flex: 1}}>
             {paperContents.title !== "" ? (
               <ScrollView style={{ flex: 1 }}>
-                <Text style={{ color: '#fff' }}>{new Date(paperContents.publishedDate).toLocaleDateString('de')}</Text>
+                <Text style={[{ color: '#fff' }, styles.paperDate]}>{new Date(paperContents.publishedDate).toLocaleDateString('de')}</Text>
                 <Text style={styles.paperTitle}>{paperContents.title}</Text>
                 <Text style={styles.paperAuthors}>{paperContents.authors.length > 1 ? paperContents.authors.map(author => author.name).join(', ') : paperContents.authors[0].name}</Text>
                 {aiStatus === 'loading' ? (
@@ -116,8 +120,8 @@ const styles = StyleSheet.create({
   },
   fullscreenBackButton: {
     position: 'absolute',
-    top: 32,
-    left: 16,
+    top: 112,
+    left: 18,
     zIndex: 1000,
   },
   container: {
@@ -133,6 +137,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     width: '100%'
   },
+  appTitleContainer: {
+    marginBottom: 8,
+  },
   searchBar: {
     color: '#fff',
     height: 48,
@@ -146,13 +153,29 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    marginVertical: 16,
+    marginVertical: 32,
+  },
+  backButtonCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#60AFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonIcon: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
   },
   paperTitle: {
     color: '#fff',
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  paperDate: {
+    marginTop: 8,
   },
   paperAuthors: {
     color: '#aaa',
