@@ -26,6 +26,18 @@ class ResearchHelperCrew():
             )
         )
 
+        self.takeaway_agent = Agent(
+            role="Senior Paper Takeaway Generator",
+            goal="Summarize the key takeaways of a paper into concise bullet points.",
+            backstory="You are an expert at distilling central insights and actionable or learning points from lengthy texts. Do not use any markdown formatting in your output, except for bullet points as dashes.",
+            verbose=True,
+            allow_delegation=False,
+            llm=LLM(
+                model="ollama/gemma3:4b",
+                base_url="http://localhost:11434",
+            )
+)
+
         self.summarizer_task = Task(
             name="Summarize Research Paper",
             description="Summarize the provided research paper content: {paper_content}",
@@ -40,9 +52,16 @@ class ResearchHelperCrew():
             agent=self.citator_agent,
         )
 
+        self.takeaway_task = Task(
+            name="Generate Paper Takeaways",
+            description="Create a list of the most important takeaways from the following paper content: {paper_content}",
+            expected_output="A list of up to 3–5 concise bullet points summarizing the central insights and potential implications.",
+            agent=self.takeaway_agent,
+        )
+
         self.crew = Crew(
-            agents=[self.summarizer_agent, self.citator_agent],
-            tasks=[self.summarizer_task, self.citator_task],
+            agents=[self.summarizer_agent, self.takeaway_agent, self.citator_agent],
+            tasks=[self.summarizer_task, self.takeaway_task, self.citator_task],
             verbose=True,
         )
     
@@ -54,12 +73,16 @@ class ResearchHelperCrew():
         """
         self.crew.kickoff(inputs=inputs)
         summarizer_output = self.summarizer_task.output
+        takeaway_output = self.takeaway_task.output
         citator_output = self.citator_task.output
+        
 
-        if not summarizer_output or not citator_output:
+        if not summarizer_output or not citator_output or not takeaway_output:
             raise ValueError("Crew did not produce expected outputs.")
 
         return {
             "summarizer_output": summarizer_output.raw,
+            "takeaway_output": takeaway_output.raw,
             "citator_output": citator_output.raw
+            
         }

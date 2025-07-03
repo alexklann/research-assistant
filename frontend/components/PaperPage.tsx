@@ -8,6 +8,7 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
   const [aiStatus, setAIStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [crewResponses, setCrewResponses] = useState({
     'summarizer': '',
+    'takeaway': '',
     'citator': '',
   });
 
@@ -28,6 +29,7 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
       .then(data => {
         setCrewResponses({
           'summarizer': data.summarizer_output,
+          'takeaway': data.takeaway_output,
           'citator': data.citator_output,
         });
         setAIStatus('idle');
@@ -80,12 +82,16 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
                 ) : (
                   <View style={styles.aiContainer}>
                     <View>
-                      <Text>Summary:</Text>
-                      <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
+                    <Text>Summary:</Text>
+                    <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
                     </View>
                     <View>
-                      <Text>Example Citation:</Text>
-                      <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
+                    <Text>Takeaways:</Text>
+                    <Text style={styles.aiTakeaway}>{crewResponses.takeaway}</Text>
+                    </View>
+                    <View>
+                    <Text>Example Citation:</Text>
+                    <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
                     </View>
                   </View>
                 )}
@@ -198,6 +204,10 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   aiSummarizer: {
+    color: '#000',
+    fontSize: 16,
+  },
+  aiTakeaway: {
     color: '#000',
     fontSize: 16,
   },
