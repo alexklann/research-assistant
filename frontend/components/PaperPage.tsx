@@ -7,7 +7,7 @@ import {
   Share,
   Image,
 } from "react-native";
-import { Entypo } from "@expo/vector-icons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import PdfViewer from "./PdfViewer";
 import { ResearchPaper } from "@/types/ResearchPaper";
@@ -198,7 +198,10 @@ export function PaperPage({
           </Pressable>
           <View style={{ flex: 1 }}>
             {paperContents.title !== "" ? (
-              <ScrollView style={{ flex: 1 }}>
+              <ScrollView
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator={false}
+              >
                 <Text style={[{ color: "#fff" }, styles.paperDate]}>
                   {new Date(paperContents.publishedDate).toLocaleDateString(
                     "de"
@@ -242,9 +245,7 @@ export function PaperPage({
                     </View>
                   </View>
                 )}
-                <PdfViewer
-                  source={{ uri: paperContents.downloadUrl }}
-                  style={{
+                <View style={{
                     flex: 1,
                     backgroundColor: "#00000000",
                     width: "100%",
@@ -252,13 +253,29 @@ export function PaperPage({
                     marginBottom: 128,
                     borderRadius: 8,
                     overflow: "hidden",
-                  }}
-                  webviewProps={{
-                    onTouchStart: () => setIsFullscreen(true),
-                  }}
-                />
+                    position: "relative"
+                  }}>
+                  <PdfViewer
+                    source={{ uri: paperContents.downloadUrl }}
+                    style={{ flex: 1 }}
+                  />
+                  <Pressable
+                    onPress={() => setIsFullscreen(true)}
+                    style={styles.fullscreenButton}
+                  >
+                    <MaterialIcons name="fullscreen" size={28} color="#fff" />
+                  </Pressable>
+                </View>
                 {photos.length > 0 && photos[photos.length - 1] && (
                   <View style={styles.imageContainer}>
+                    <Image
+                      source={{
+                        uri: photos[photos.length - 1].startsWith("http")
+                          ? photos[photos.length - 1]
+                          : `${apiBaseURL}${photos[photos.length - 1]}`,
+                      }}
+                      style={styles.mainImage}
+                    />
                     <Pressable
                       style={styles.closeButton}
                       onPress={() => {
@@ -272,72 +289,44 @@ export function PaperPage({
                               style: "destructive",
                               onPress: async () => {
                                 try {
-                                  const apiBaseURL =
-                                    process.env.EXPO_PUBLIC_BACKEND_URL;
-                                  const photoToDelete =
-                                    photos[photos.length - 1];
-                                  const relativePhotoUrl = new URL(
-                                    photoToDelete,
-                                    apiBaseURL
-                                  ).pathname;
+                                  const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
+                                  const photoToDelete = photos[photos.length - 1];
+                                  const relativePhotoUrl = new URL(photoToDelete, apiBaseURL).pathname;
 
                                   const response = await fetch(
-                                    `${apiBaseURL}/v1/paper/${
-                                      paperContents.id
-                                    }/photos?photoUrl=${encodeURIComponent(
-                                      relativePhotoUrl
-                                    )}`,
+                                    `${apiBaseURL}/v1/paper/${paperContents.id}/photos?photoUrl=${encodeURIComponent(relativePhotoUrl)}`,
                                     { method: "DELETE" }
                                   );
 
                                   if (!response.ok) {
                                     const errorText = await response.text();
-                                    console.error(
-                                      "Backend-Löschfehler:",
-                                      response.status,
-                                      errorText
-                                    );
-                                    alert(
-                                      "Fehler beim Löschen des Fotos auf dem Server."
-                                    );
+                                    console.error("Backend-Löschfehler:", response.status, errorText);
+                                    alert("Fehler beim Löschen des Fotos auf dem Server.");
                                     return;
                                   }
 
                                   setPhotos((prev) =>
-                                    prev.filter(
-                                      (photo) => photo !== photoToDelete
-                                    )
+                                    prev.filter((photo) => photo !== photoToDelete)
                                   );
                                 } catch (error) {
-                                  console.error(
-                                    "Fehler beim Löschen des Fotos:",
-                                    error
-                                  );
+                                  console.error("Fehler beim Löschen des Fotos:", error);
                                   alert("Fehler beim Löschen des Fotos.");
                                 }
                               },
                             },
-                          ],
-                          { cancelable: true }
+                          ]
                         );
                       }}
                     >
-                      <Text style={styles.closeButtonText}>×</Text>
+                      <MaterialIcons name="close" size={24} color="#fff" />
                     </Pressable>
-
-                    <Image
-                      source={{
-                        uri: photos[photos.length - 1].startsWith("http")
-                          ? photos[photos.length - 1]
-                          : `${apiBaseURL}${photos[photos.length - 1]}`,
-                      }}
-                      style={styles.mainImage}
-                    />
                   </View>
                 )}
 
                 <Pressable style={styles.photoButton} onPress={handleTakePhoto}>
-                  <Text style={styles.photoButtonText}>Notiz hinzufügen</Text>
+                  <Text style={[styles.photoButtonText, { color: '#fff' }]}>
+                    Notiz hinzufügen
+                  </Text>
                 </Pressable>
               </ScrollView>
             ) : (
@@ -378,6 +367,18 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: 32,
     backgroundColor: "#121212",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 18,
+    right: 18,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   appTitle: {
     color: "#fff",
@@ -474,6 +475,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
+  fullscreenButton: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#60AFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  noteButtonText: {
+    color: '#fff',
+  },
   imageContainer: {
     width: "100%",
     height: 300,
@@ -482,20 +498,29 @@ const styles = StyleSheet.create({
     position: "relative",
     marginTop: -100,
     marginBottom: 125,
+    borderRadius: 12,
+    overflow: "hidden",
   },
   mainImage: {
     width: "100%",
     height: "100%",
     resizeMode: "cover",
-    borderWidth: 2,
-    borderColor: "#91c5fa",
+
+    borderRadius: 12,
   },
 
-  closeButton: {
-    position: "absolute",
-    top: 3,
-    right: 11,
-    zIndex: 1,
+
+  deleteNoteButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#60AFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
   },
 
   closeButtonText: {
@@ -503,4 +528,4 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
   },
-});
+ });
