@@ -1,4 +1,5 @@
-import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet, Share } from "react-native";
+import { Entypo } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import PdfViewer from "./PdfViewer";
 import { ResearchPaper } from "@/types/ResearchPaper";
@@ -52,6 +53,31 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
           >
             <Text style={styles.backButtonIcon}>&#8592;</Text>
           </Pressable>
+          <Pressable
+            onPress={async () => {
+              try {
+                const result = await Share.share({
+                  url: paperContents.downloadUrl,
+                  title: paperContents.title,
+                  message: `Check out this paper: ${paperContents.title}\n${paperContents.downloadUrl}`
+                });
+                if (result.action === Share.sharedAction) {
+                  if (result.activityType) {
+                    // shared with activity type of result.activityType
+                  } else {
+                    // shared
+                  }
+                } else if (result.action === Share.dismissedAction) {
+                  // dismissed
+                }
+              } catch (error) {
+                console.log('Share failed:', error);
+              }
+            }}
+            style={[styles.fullscreenShareButton, styles.backButtonCircle]}
+          >
+            <Entypo name="share" size={24} color="#fff" style={{ left: -1.5 }} />
+          </Pressable>
           <PdfViewer
             source={{ uri: paperContents.downloadUrl }}
             style={{ flex: 1 }}
@@ -97,7 +123,15 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
                 )}
                 <PdfViewer
                   source={{ uri: paperContents.downloadUrl }}
-                  style={{ flex: 1, backgroundColor: '#00000000', width: '100%', height: 450, marginBottom: 128 }}
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: '#00000000', 
+                    width: '100%', 
+                    height: 450, 
+                    marginBottom: 128,
+                    borderRadius: 8,
+                    overflow: 'hidden'
+                  }}
                   webviewProps={{
                     onTouchStart: () => setIsFullscreen(true)
                   }}
@@ -130,10 +164,16 @@ const styles = StyleSheet.create({
     left: 18,
     zIndex: 1000,
   },
+  fullscreenShareButton: {
+    position: 'absolute',
+    top: 112,
+    right: 18,
+    zIndex: 1000,
+  },
   container: {
     flex: 1,
     justifyContent: 'flex-start',
-    paddingTop: 72,
+    paddingTop: 80,
     paddingHorizontal: 32,
     backgroundColor: '#121212',
   },
@@ -174,6 +214,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  shareButtonIcon: {
+    color: '#fff',
+    fontSize: 20,
+  },
   paperTitle: {
     color: '#fff',
     fontSize: 24,
@@ -195,9 +239,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   aiContainer: {
-    borderWidth: 1,
     borderRadius: 8,
-    borderColor: '#91c5fa',
     padding: 16,
     marginVertical: 16,
     backgroundColor: '#60AFFF',
