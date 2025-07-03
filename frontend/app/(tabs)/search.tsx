@@ -48,7 +48,7 @@ export default function SearchScreen() {
           setSearchStatus('error')
         });
     },
-    500
+    1000 // 1 second debounce
   )
 
   const setPaper = (paper: any) => {
@@ -101,7 +101,7 @@ export default function SearchScreen() {
               {searchData.length > 0 ? (
                 searchData.map((item, index) => (
                   <View key={index} style={{ marginVertical: 8 }}>
-                    <Pressable onPress={() => {setPaper(item)}}>
+                    <Pressable onPress={() => {setPaper(item)}} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#444' }}>
                       <Text style={{ color: '#fff', fontSize: 16 }}>{item.title}</Text>
                       <Text style={{ color: '#aaa', fontSize: 14 }}>{item.authors[0].name}</Text>
                     </Pressable>
@@ -115,7 +115,7 @@ export default function SearchScreen() {
                 ) : searchStatus === 'notfound' ? (
                   <Text style={styles.searchStatus}>No results found.</Text>
                 ) : (
-                  <Text style={styles.searchStatus}>An error occurred while searching.</Text>
+                  <Text style={styles.searchStatus}>The Core API returned an error. This is not an issue on our end.</Text>
                 )
               )}
             </ScrollView>

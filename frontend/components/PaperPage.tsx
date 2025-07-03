@@ -82,15 +82,15 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
                 ) : (
                   <View style={styles.aiContainer}>
                     <View>
-                    <Text>Summary:</Text>
+                    <Text style={{ color: '#fff' }}>Summary:</Text>
                     <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
                     </View>
                     <View>
-                    <Text>Takeaways:</Text>
+                    <Text style={{ color: '#fff' }}>Takeaways:</Text>
                     <Text style={styles.aiTakeaway}>{crewResponses.takeaway}</Text>
                     </View>
                     <View>
-                    <Text>Example Citation:</Text>
+                    <Text style={{ color: '#fff' }}>Example Citation:</Text>
                     <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
                     </View>
                   </View>
@@ -204,15 +204,15 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   aiSummarizer: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
   },
   aiTakeaway: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
   },
   aiCitator: {
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold'
   }

@@ -1,4 +1,3 @@
-import { FilledButton } from '@/components/FilledButton';
 import { StyleSheet, View, Text, TouchableWithoutFeedback, Keyboard, Pressable } from 'react-native';
 import storage from '@/utils/paperStorage';
 import { useEffect, useState } from 'react';
@@ -65,7 +64,7 @@ export default function HomeScreen() {
               {!loading ? (
                 oldPapers.length > 0 ? (
                   oldPapers.map((paper: { title: string, id: number }, index) => (
-                    <Pressable onPress={() => handlePaperPress(paper.id)} key={index} style={{ marginVertical: 8 }}>
+                    <Pressable onPress={() => handlePaperPress(paper.id)} key={index} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#444' }}>
                       <Text style={{ color: '#fff', fontSize: 16 }}>{paper.title}</Text>
                     </Pressable>
                   ))
