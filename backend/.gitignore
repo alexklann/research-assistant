@@ -1,3 +1,6 @@
 __pycache__
 .venv
 *.env
+
+photo_db.json
+uploaded_photos/

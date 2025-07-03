@@ -1,47 +1,144 @@
-import { View, Text, Pressable, ScrollView, StyleSheet, Share } from "react-native";
-import { Entypo } from '@expo/vector-icons';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Share,
+  Image,
+} from "react-native";
+import { Entypo } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import PdfViewer from "./PdfViewer";
 import { ResearchPaper } from "@/types/ResearchPaper";
+import * as ImagePicker from "expo-image-picker";
+import { Alert } from "react-native";
 
-export function PaperPage({ paperContents, setCurrentPage }: { paperContents: ResearchPaper, setCurrentPage: (page: 'search' | 'detail') => void }) {
+export function PaperPage({
+  paperContents,
+  setCurrentPage,
+}: {
+  paperContents: ResearchPaper;
+  setCurrentPage: (page: "search" | "detail") => void;
+}) {
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [aiStatus, setAIStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [aiStatus, setAIStatus] = useState<"idle" | "loading" | "error">(
+    "idle"
+  );
   const [crewResponses, setCrewResponses] = useState({
-    'summarizer': '',
-    'takeaway': '',
-    'citator': '',
+    summarizer: "",
+    takeaway: "",
+    citator: "",
   });
+
+  const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
+  const [photos, setPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchAIResponses = async () => {
       const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
       await fetch(`${apiBaseURL}/v1/crew/run`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({
-          "paper_content": paperContents.abstract,
-          "authors": paperContents.authors.map(author => author.name).toString(),
-          "title": paperContents.title,
-          "journal": "",
-          "year": new Date(paperContents.publishedDate).getFullYear().toString(),
+          paper_content: paperContents.abstract,
+          authors: paperContents.authors
+            .map((author) => author.name)
+            .toString(),
+          title: paperContents.title,
+          journal: "",
+          year: new Date(paperContents.publishedDate).getFullYear().toString(),
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          setCrewResponses({
+            summarizer: data.summarizer_output,
+            takeaway: data.takeaway_output,
+            citator: data.citator_output,
+          });
+          setAIStatus("idle");
         })
-      })
-      .then(response => response.json())
-      .then(data => {
-        setCrewResponses({
-          'summarizer': data.summarizer_output,
-          'takeaway': data.takeaway_output,
-          'citator': data.citator_output,
+        .catch((error) => {
+          setAIStatus("error");
         });
-        setAIStatus('idle');
-      })
-      .catch(error => {
-        setAIStatus('error');
-      });
-    }
-    setAIStatus('loading');
+    };
+    setAIStatus("loading");
     fetchAIResponses();
-  }, [paperContents])
+  }, [paperContents]);
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      try {
+        const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
+        const response = await fetch(
+          `${apiBaseURL}/v1/paper/${paperContents.id}/photos`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("fetchPhotos response:", JSON.stringify(data));
+          setPhotos(Array.isArray(data.photoUrls) ? data.photoUrls : []);
+        } else {
+          console.error("Fehler beim Laden der Fotos:", response.status);
+          setPhotos([]);
+        }
+      } catch (error) {
+        console.error("Fehler beim Abrufen der Fotos:", error);
+        setPhotos([]);
+      }
+    };
+    fetchPhotos();
+  }, [paperContents.id]);
+
+  const handleTakePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Camera permission is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: false,
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const localUri = result.assets[0].uri;
+      try {
+        const formData = new FormData();
+        const uniqueName = `photo_${Date.now()}.jpg`;
+
+        formData.append("photo", {
+          uri: localUri,
+          name: uniqueName,
+          type: "image/jpeg",
+        } as any);
+
+        const apiBaseURL = process.env.EXPO_PUBLIC_BACKEND_URL;
+        const response = await fetch(
+          `${apiBaseURL}/v1/upload-photo?paper_id=${encodeURIComponent(
+            paperContents.id
+          )}`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const responseText = await response.text();
+        console.log("Upload response:", response.status, responseText);
+
+        if (!response.ok) throw new Error("Upload failed");
+        const data = JSON.parse(responseText);
+
+        const uploadedPhotoUrl = `${apiBaseURL}${data.url}`;
+        console.log("Uploaded photo URL:", uploadedPhotoUrl);
+
+        setPhotos([uploadedPhotoUrl]);
+      } catch (error) {
+        console.error("Error uploading photo:", error);
+        alert("Upload failed.");
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -59,24 +156,26 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
                 const result = await Share.share({
                   url: paperContents.downloadUrl,
                   title: paperContents.title,
-                  message: `Check out this paper: ${paperContents.title}\n${paperContents.downloadUrl}`
+                  message: `Check out this paper: ${paperContents.title}\n${paperContents.downloadUrl}`,
                 });
                 if (result.action === Share.sharedAction) {
                   if (result.activityType) {
-                    // shared with activity type of result.activityType
                   } else {
-                    // shared
                   }
                 } else if (result.action === Share.dismissedAction) {
-                  // dismissed
                 }
               } catch (error) {
-                console.log('Share failed:', error);
+                console.log("Share failed:", error);
               }
             }}
             style={[styles.fullscreenShareButton, styles.backButtonCircle]}
           >
-            <Entypo name="share" size={24} color="#fff" style={{ left: -1.5 }} />
+            <Entypo
+              name="share"
+              size={24}
+              color="#fff"
+              style={{ left: -1.5 }}
+            />
           </Pressable>
           <PdfViewer
             source={{ uri: paperContents.downloadUrl }}
@@ -88,54 +187,158 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
           <View style={styles.appTitleContainer}>
             <Text style={styles.appTitle}>pAIper</Text>
           </View>
-          <Pressable onPress={() => {setCurrentPage('search')}}>
+          <Pressable
+            onPress={() => {
+              setCurrentPage("search");
+            }}
+          >
             <View style={styles.backButtonCircle}>
               <Text style={styles.backButtonIcon}>&#8592;</Text>
             </View>
           </Pressable>
-          <View style={{flex: 1}}>
+          <View style={{ flex: 1 }}>
             {paperContents.title !== "" ? (
               <ScrollView style={{ flex: 1 }}>
-                <Text style={[{ color: '#fff' }, styles.paperDate]}>{new Date(paperContents.publishedDate).toLocaleDateString('de')}</Text>
+                <Text style={[{ color: "#fff" }, styles.paperDate]}>
+                  {new Date(paperContents.publishedDate).toLocaleDateString(
+                    "de"
+                  )}
+                </Text>
                 <Text style={styles.paperTitle}>{paperContents.title}</Text>
-                <Text style={styles.paperAuthors}>{paperContents.authors.length > 1 ? paperContents.authors.map(author => author.name).join(', ') : paperContents.authors[0].name}</Text>
-                {aiStatus === 'loading' ? (
+                <Text style={styles.paperAuthors}>
+                  {paperContents.authors.length > 1
+                    ? paperContents.authors
+                        .map((author) => author.name)
+                        .join(", ")
+                    : paperContents.authors[0].name}
+                </Text>
+                {aiStatus === "loading" ? (
                   <View style={styles.aiContainer}>
                     <Text style={styles.aiCitator}>AI is thinking...</Text>
                   </View>
-                ) : aiStatus === 'error' ? (
-                  <Text style={{ color: '#fff' }}>There was an error generating ai responses</Text>
+                ) : aiStatus === "error" ? (
+                  <Text style={{ color: "#fff" }}>
+                    There was an error generating ai responses
+                  </Text>
                 ) : (
                   <View style={styles.aiContainer}>
                     <View>
-                    <Text style={{ color: '#fff' }}>Summary:</Text>
-                    <Text style={styles.aiSummarizer}>{crewResponses.summarizer}</Text>
+                      <Text style={{ color: "#fff" }}>Summary:</Text>
+                      <Text style={styles.aiSummarizer}>
+                        {crewResponses.summarizer}
+                      </Text>
                     </View>
                     <View>
-                    <Text style={{ color: '#fff' }}>Takeaways:</Text>
-                    <Text style={styles.aiTakeaway}>{crewResponses.takeaway}</Text>
+                      <Text style={{ color: "#fff" }}>Takeaways:</Text>
+                      <Text style={styles.aiTakeaway}>
+                        {crewResponses.takeaway}
+                      </Text>
                     </View>
                     <View>
-                    <Text style={{ color: '#fff' }}>Example Citation:</Text>
-                    <Text style={styles.aiCitator}>{crewResponses.citator}</Text>
+                      <Text style={{ color: "#fff" }}>Example Citation:</Text>
+                      <Text style={styles.aiCitator}>
+                        {crewResponses.citator}
+                      </Text>
                     </View>
                   </View>
                 )}
                 <PdfViewer
                   source={{ uri: paperContents.downloadUrl }}
-                  style={{ 
-                    flex: 1, 
-                    backgroundColor: '#00000000', 
-                    width: '100%', 
-                    height: 450, 
+                  style={{
+                    flex: 1,
+                    backgroundColor: "#00000000",
+                    width: "100%",
+                    height: 450,
                     marginBottom: 128,
                     borderRadius: 8,
-                    overflow: 'hidden'
+                    overflow: "hidden",
                   }}
                   webviewProps={{
-                    onTouchStart: () => setIsFullscreen(true)
+                    onTouchStart: () => setIsFullscreen(true),
                   }}
                 />
+                {photos.length > 0 && photos[photos.length - 1] && (
+                  <View style={styles.imageContainer}>
+                    <Pressable
+                      style={styles.closeButton}
+                      onPress={() => {
+                        Alert.alert(
+                          "Foto löschen",
+                          "Möchtest du das Foto wirklich entfernen?",
+                          [
+                            { text: "Abbrechen", style: "cancel" },
+                            {
+                              text: "Löschen",
+                              style: "destructive",
+                              onPress: async () => {
+                                try {
+                                  const apiBaseURL =
+                                    process.env.EXPO_PUBLIC_BACKEND_URL;
+                                  const photoToDelete =
+                                    photos[photos.length - 1];
+                                  const relativePhotoUrl = new URL(
+                                    photoToDelete,
+                                    apiBaseURL
+                                  ).pathname;
+
+                                  const response = await fetch(
+                                    `${apiBaseURL}/v1/paper/${
+                                      paperContents.id
+                                    }/photos?photoUrl=${encodeURIComponent(
+                                      relativePhotoUrl
+                                    )}`,
+                                    { method: "DELETE" }
+                                  );
+
+                                  if (!response.ok) {
+                                    const errorText = await response.text();
+                                    console.error(
+                                      "Backend-Löschfehler:",
+                                      response.status,
+                                      errorText
+                                    );
+                                    alert(
+                                      "Fehler beim Löschen des Fotos auf dem Server."
+                                    );
+                                    return;
+                                  }
+
+                                  setPhotos((prev) =>
+                                    prev.filter(
+                                      (photo) => photo !== photoToDelete
+                                    )
+                                  );
+                                } catch (error) {
+                                  console.error(
+                                    "Fehler beim Löschen des Fotos:",
+                                    error
+                                  );
+                                  alert("Fehler beim Löschen des Fotos.");
+                                }
+                              },
+                            },
+                          ],
+                          { cancelable: true }
+                        );
+                      }}
+                    >
+                      <Text style={styles.closeButtonText}>×</Text>
+                    </Pressable>
+
+                    <Image
+                      source={{
+                        uri: photos[photos.length - 1].startsWith("http")
+                          ? photos[photos.length - 1]
+                          : `${apiBaseURL}${photos[photos.length - 1]}`,
+                      }}
+                      style={styles.mainImage}
+                    />
+                  </View>
+                )}
+
+                <Pressable style={styles.photoButton} onPress={handleTakePhoto}>
+                  <Text style={styles.photoButtonText}>Notiz hinzufügen</Text>
+                </Pressable>
               </ScrollView>
             ) : (
               <Text>An error occured during the loading of this paper.</Text>
@@ -147,115 +350,157 @@ export function PaperPage({ paperContents, setCurrentPage }: { paperContents: Re
   );
 }
 
-
 const styles = StyleSheet.create({
   fullscreenContainer: {
     flex: 1,
-    backgroundColor: '#121212',
-    position: 'absolute',
+    backgroundColor: "#121212",
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   fullscreenBackButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 112,
     left: 18,
     zIndex: 1000,
   },
   fullscreenShareButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 112,
     right: 18,
     zIndex: 1000,
   },
   container: {
     flex: 1,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
     paddingTop: 80,
     paddingHorizontal: 32,
-    backgroundColor: '#121212',
+    backgroundColor: "#121212",
   },
   appTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 38,
-    fontWeight: 'bold',
-    width: '100%'
+    fontWeight: "bold",
+    width: "100%",
   },
   appTitleContainer: {
     marginBottom: 8,
   },
   searchBar: {
-    color: '#fff',
+    color: "#fff",
     height: 48,
-    borderColor: '#cfcfcf',
+    borderColor: "#cfcfcf",
     borderWidth: 1,
     paddingHorizontal: 16,
     borderRadius: 8,
     marginTop: 24,
   },
   backButton: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginVertical: 32,
   },
   backButtonCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#60AFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#60AFFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   backButtonIcon: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   shareButtonIcon: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 20,
   },
   paperTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   paperDate: {
     marginTop: 8,
   },
   paperAuthors: {
-    color: '#aaa',
+    color: "#aaa",
     fontSize: 16,
     marginBottom: 8,
   },
   searchStatus: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
     marginTop: 32,
-    textAlign: 'center',
+    textAlign: "center",
   },
   aiContainer: {
     borderRadius: 8,
     padding: 16,
     marginVertical: 16,
-    backgroundColor: '#60AFFF',
+    backgroundColor: "#60AFFF",
     gap: 16,
   },
   aiSummarizer: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
   },
   aiTakeaway: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
   },
   aiCitator: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold'
-  }
+    fontWeight: "bold",
+  },
+  photoButton: {
+    backgroundColor: "#60AFFF",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -100,
+    marginBottom: 100,
+  },
+  photoButtonText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  imageContainer: {
+    width: "100%",
+    height: 300,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    marginTop: -100,
+    marginBottom: 125,
+  },
+  mainImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+    borderWidth: 2,
+    borderColor: "#91c5fa",
+  },
+
+  closeButton: {
+    position: "absolute",
+    top: 3,
+    right: 11,
+    zIndex: 1,
+  },
+
+  closeButtonText: {
+    color: "#fff",
+    fontSize: 30,
+    fontWeight: "bold",
+  },
 });
