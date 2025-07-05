@@ -29,6 +29,5 @@ fastapi run src/main.py # If you use iOS. Hosts on 0.0.0.0 instead.
 The backend requires a .env file in the root of the folder with the following fields:  
 ```
 CORE_API_KEY = "" # API key for the CORE Research Paper API
-MODEL = "ollama/llama3.1"
-API_BASE = "" # OLLAMA URL
+API_BASE = "http://localhost:11434" # OLLAMA URL
 ```
